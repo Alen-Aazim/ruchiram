@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ruchiram • Food Festival</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Ruchiram</div>
+    <div class="menu-dot" id="menuDot">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+    <nav id="dotMenu" class="dot-menu hidden">
+      <button data-action="A">DESERTS - A</button>
+      <button data-action="B">BIRIYANI - B</button>
+      <button data-action="C">ICE CREAM - C</button>
+      <button data-action="D">SODA - D</button>
+      <button data-action="E">BWONIE - E</button>
+      <hr/>
+      <button id="viewDelivered">DELIVERED ORDERS</button>
+      <button id="viewAll">ALL ORDERS</button>
+      <button id="newOrderBtn">NEW ORDER</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1>Ruchiram Food Festival</h1>
+      <p>Stylish, fast order system — add orders, view by section, mark delivered.</p>
+      <a class="btn" href="orders.html">Open Orders Dashboard</a>
+    </section>
+
+    <section class="products">
+      <h2>Menu — Popular</h2>
+      <div class="product-grid" id="productGrid">
+        <!-- Products will be rendered by script -->
+      </div>
+    </section>
+  </main>
+
+  <!-- New Order Modal -->
+  <div id="orderModal" class="modal hidden">
+    <div class="modal-card">
+      <button class="close" id="closeModal">&times;</button>
+      <h3>New Order</h3>
+      <form id="orderForm">
+        <label>Name <input name="name" required /></label>
+        <label>Product Name
+          <select name="productName" id="productSelect" required>
+            <!-- filled by script -->
+          </select>
+        </label>
+        <label>Price <input name="price" type="number" step="0.01" required /></label>
+        <label>Paid
+          <select name="paid">
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+          </select>
+        </label>
+        <label>Section
+          <select name="section" id="sectionSelect" required>
+            <option value="A">A - DESERTS</option>
+            <option value="B">B - BIRIYANI</option>
+            <option value="C">C - ICE CREAM</option>
+            <option value="D">D - SODA</option>
+            <option value="E">E - BWONIE</option>
+          </select>
+        </label>
+        <div style="text-align:right">
+          <button type="submit" class="btn">Save Order</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

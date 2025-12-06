@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ruchiram • Orders</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Ruchiram • Orders</div>
+    <a class="btn" href="index.html">Home</a>
+  </header>
+
+  <main class="container">
+    <div class="panel">
+      <div class="panel-left">
+        <h3>Sections</h3>
+        <ul class="sections">
+          <li><button class="sectionBtn" data-section="A">A - DESERTS</button></li>
+          <li><button class="sectionBtn" data-section="B">B - BIRIYANI</button></li>
+          <li><button class="sectionBtn" data-section="C">C - ICE CREAM</button></li>
+          <li><button class="sectionBtn" data-section="D">D - SODA</button></li>
+          <li><button class="sectionBtn" data-section="E">E - BWONIE</button></li>
+        </ul>
+        <hr/>
+        <button id="allOrdersBtn" class="btn">ALL ORDERS</button>
+        <button id="deliveredBtn" class="btn ghost">DELIVERED</button>
+        <button id="openNewOrder" class="btn">+ NEW ORDER</button>
+      </div>
+
+      <div class="panel-right">
+        <h3 id="panelTitle">All Orders</h3>
+        <div id="ordersList" class="orders-list">
+          <!-- orders will be injected here -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Reuse order modal from index page -->
+  <div id="orderModal" class="modal hidden">
+    <div class="modal-card">
+      <button class="close" id="closeModal">&times;</button>
+      <h3>New Order</h3>
+      <form id="orderForm">
+        <label>Name <input name="name" required /></label>
+        <label>Product Name
+          <select name="productName" id="productSelect" required>
+            <!-- filled by script -->
+          </select>
+        </label>
+        <label>Price <input name="price" type="number" step="0.01" required /></label>
+        <label>Paid
+          <select name="paid">
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+          </select>
+        </label>
+        <label>Section
+          <select name="section" id="sectionSelect" required>
+            <option value="A">A - DESERTS</option>
+            <option value="B">B - BIRIYANI</option>
+            <option value="C">C - ICE CREAM</option>
+            <option value="D">D - SODA</option>
+            <option value="E">E - BWONIE</option>
+          </select>
+        </label>
+        <div style="text-align:right">
+          <button type="submit" class="btn">Save Order</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
