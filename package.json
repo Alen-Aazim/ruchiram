@@ -1,7 +1,7 @@
 {
   "name": "ruchiram-server",
   "version": "1.0.0",
-  "description": "Ruchiram Multi-Page Food Festival Website with Express Server",
+  "description": "Ruchiram Food Festival — static frontend + express backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
