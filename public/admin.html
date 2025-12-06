@@ -3,151 +3,60 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ruchiram — Admin</title>
+  <title>Admin — Ruchiram</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <div class="container">
-    <div class="header">
+  <header class="site-header small">
+    <div class="container header-inner">
       <div class="brand">
         <div class="logo">R</div>
-        <div>
-          <div class="h1">Admin — Ruchiram</div>
-          <div class="small">Add products (private or public)</div>
+        <div class="brand-text">
+          <div class="site-title">Admin — Ruchiram</div>
+          <div class="site-sub">Add products (private or public)</div>
         </div>
       </div>
-      <div>
-        <a class="btn" href="/">Home</a>
+      <div class="header-actions">
+        <a class="btn ghost" href="/">Home</a>
       </div>
     </div>
+  </header>
 
-    <section style="margin-top:18px">
-      <div class="card">
-        <h3>Authenticate</h3>
-        <div class="field">
-          <div class="label">Admin token</div>
-          <input id="token" class="input" placeholder="Paste your ADMIN_TOKEN here">
-        </div>
-        <div style="display:flex;gap:8px">
-          <button id="btnLogin" class="btn primary">Login</button>
-          <button id="btnFetchPublic" class="btn outline">View public products</button>
-        </div>
+  <main class="container content">
+    <section class="card">
+      <h3>Authenticate</h3>
+      <label class="label">Admin token</label>
+      <input id="token" class="input" type="password" placeholder="Paste your ADMIN_TOKEN here">
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button id="btnLogin" class="btn primary">Login</button>
+        <button id="btnFetchPublic" class="btn ghost">View public products</button>
       </div>
-
-      <div id="adminArea" style="display:none;margin-top:12px">
-        <div class="card">
-          <h3>Add product</h3>
-          <div class="field"><div class="label">Product name</div><input id="prodName" class="input"></div>
-          <div class="field"><div class="label">Section</div>
-            <select id="prodSection" class="input">
-              <option>BIRIYANI</option><option>SODA</option><option>UPPILITTATHU</option><option>POPCORN</option><option>ICE CREAM</option>
-            </select>
-          </div>
-          <div class="field"><div class="label">Price</div><input id="prodPrice" class="input" type="number" min="0"></div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <label><input id="prodPrivate" type="checkbox"> Private (only visible to admin)</label>
-            <button id="btnAddProd" class="btn primary">Add</button>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:12px">
-          <h3>All products (admin view)</h3>
-          <table class="table" id="allProducts">
-            <thead><tr><th>Product</th><th>Section</th><th>Price</th><th>Private</th><th>Action</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div id="publicList" style="margin-top:12px"></div>
     </section>
 
-    <div class="footer">Admin area — keep your token secret</div>
-  </div>
+    <section class="card" id="adminArea" style="display:none">
+      <h3>Add product</h3>
+      <div class="field"><label class="label">Product name</label><input id="prodName" class="input"></div>
+      <div class="field"><label class="label">Section</label>
+        <select id="prodSection" class="input">
+          <option>BIRIYANI</option><option>SODA</option><option>UPPILITTATHU</option><option>POPCORN</option><option>ICE CREAM</option>
+        </select>
+      </div>
+      <div class="field"><label class="label">Price</label><input id="prodPrice" class="input" type="number" min="0"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+        <label><input id="prodPrivate" type="checkbox"> Private (only visible to admin)</label>
+        <button id="btnAddProd" class="btn primary">Add</button>
+      </div>
+    </section>
 
-<script>
-(function(){
-  let token = '';
-  const $ = id => document.getElementById(id);
+    <section class="card">
+      <h3>Products</h3>
+      <div id="allProducts" class="product-list">No products loaded.</div>
+    </section>
+  </main>
 
-  function authHeaders() {
-    return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
-  }
+  <footer class="site-footer"><div class="container small">Admin area — keep your token secret</div></footer>
 
-  async function fetchAdminProducts(){
-    const res = await fetch('/api/admin/products', { headers: authHeaders() });
-    if (res.status === 401) { alert('Unauthorized — wrong token'); return []; }
-    return (await res.json()).products || [];
-  }
-
-  async function fetchPublic() {
-    const res = await fetch('/api/products');
-    const j = await res.json();
-    const wrap = $('publicList');
-    wrap.innerHTML = '<div class="card"><h3>Public products</h3><div class="grid" id="pubGrid"></div></div>';
-    const grid = document.getElementById('pubGrid');
-    (j.products || []).forEach(p=>{
-      const el = document.createElement('div'); el.className='card';
-      el.innerHTML = '<strong>'+escapeHtml(p.product)+'</strong><div class="small">'+escapeHtml(p.section)+'</div><div class="small">₹'+(p.price||0)+'</div>';
-      grid.appendChild(el);
-    });
-  }
-
-  $('btnLogin').addEventListener('click', async ()=>{
-    token = $('token').value.trim();
-    if(!token){ alert('Enter token'); return; }
-    const list = await fetchAdminProducts();
-    if(list.length>=0){
-      $('adminArea').style.display='block';
-      renderAdminList(list);
-    }
-  });
-
-  $('btnFetchPublic').addEventListener('click', fetchPublic);
-
-  $('btnAddProd').addEventListener('click', async ()=>{
-    const product = $('prodName').value.trim();
-    const section = $('prodSection').value;
-    const price = Number($('prodPrice').value||0);
-    const isPrivate = $('prodPrivate').checked;
-    if(!product) { alert('Enter name'); return; }
-    const res = await fetch('/api/admin/add', {
-      method:'POST',
-      headers: authHeaders(),
-      body: JSON.stringify({ product, section, price, private:isPrivate })
-    });
-    if(res.status === 401){ alert('Unauthorized'); return; }
-    const j = await res.json();
-    if(j.ok){ alert('Added'); const list = await fetchAdminProducts(); renderAdminList(list); }
-  });
-
-  async function handleDelete(id){
-    if(!confirm('Delete this product?')) return;
-    const res = await fetch('/api/admin/product/' + encodeURIComponent(id), {
-      method:'DELETE', headers: authHeaders()
-    });
-    if(res.status===401){ alert('Unauthorized'); return; }
-    const list = await fetchAdminProducts(); renderAdminList(list);
-  }
-
-  function renderAdminList(list){
-    const tbody = document.querySelector('#allProducts tbody');
-    tbody.innerHTML = '';
-    list.forEach(p=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML = '<td>'+escapeHtml(p.product)+'</td><td>'+escapeHtml(p.section)+'</td><td>₹'+(p.price||0)+'</td><td>'+(p.private? 'Yes':'No')+'</td><td><button class="btn small" data-id="'+p.id+'">Delete</button></td>';
-      tbody.appendChild(tr);
-    });
-    tbody.querySelectorAll('button[data-id]').forEach(btn=>{
-      btn.addEventListener('click', ()=> handleDelete(btn.dataset.id));
-    });
-  }
-
-  function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-
-  // fetch public initially
-  fetchPublic();
-})();
-</script>
+  <script src="/admin.js" defer></script>
 </body>
 </html>
