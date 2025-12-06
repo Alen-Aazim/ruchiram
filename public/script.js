@@ -1,13 +1,7 @@
-// script.js - shared by index.html and orders.html
-const PRODUCTS = [
-  'Biriyaani',
-  'Soda',
-  'Uppilittathu',
-  'Popcorn',
-  'Ice cream'
-];
+// script.js - redesigned client logic
+const PRODUCTS = ['Biriyaani','Soda','Uppilittathu','Popcorn','Ice cream'];
 
-// Helpers
+// API helpers
 const api = {
   getOrders: async (params='') => {
     const res = await fetch('/api/orders' + (params ? `?${params}` : ''));
@@ -31,125 +25,64 @@ const api = {
   }
 };
 
-function isModalOpen() {
-  const m = document.getElementById('orderModal');
-  return m && !m.classList.contains('hidden');
-}
+// Modal helpers + history for Android back support
+function isModalOpen(){ const m = document.getElementById('orderModal'); return m && !m.classList.contains('hidden'); }
+function openModal(){ const m = document.getElementById('orderModal'); if(!m) return; document.body.style.overflow='hidden'; m.classList.remove('hidden'); try{ if(!history.state || !history.state.modalOpen) history.pushState({modalOpen:true}, ''); }catch(e){} }
+function closeModal(opts={fromPop:false}){ const m = document.getElementById('orderModal'); if(!m) return; m.classList.add('hidden'); document.body.style.overflow=''; if(!opts.fromPop){ try{ if(history.state && history.state.modalOpen) history.back(); }catch(e){} } }
 
-function openOrderModal() {
-  const modal = document.getElementById('orderModal');
-  if (!modal) return;
-  // prevent background scroll
-  document.body.style.overflow = 'hidden';
-  modal.classList.remove('hidden');
-
-  // push history state so that back button closes modal
-  try {
-    if (!history.state || !history.state.modalOpen) {
-      history.pushState({ modalOpen: true }, '');
-    }
-  } catch (e) {
-    // ignore
-  }
-}
-
-function closeOrderModal({ fromPopState=false } = {}) {
-  const modal = document.getElementById('orderModal');
-  if (!modal) return;
-  modal.classList.add('hidden');
-  document.body.style.overflow = '';
-
-  // if not coming from popstate, and history state was pushed, go back so browser back remains consistent
-  if (!fromPopState) {
-    try {
-      if (history.state && history.state.modalOpen) {
-        history.back();
-      }
-    } catch (e) {}
-  }
-}
-
-function mountProductsGrid() {
+// mount products on index and fill selects
+function mountProducts(){
   const grid = document.getElementById('productGrid');
-  const sel = document.getElementById('productSelect');
-  if (grid) {
+  if(grid){
     grid.innerHTML = '';
-    PRODUCTS.forEach(p => {
-      const card = document.createElement('div');
-      card.className = 'card product-card';
-      card.innerHTML = `<strong>${p}</strong><div class="small">Tap to order</div><div style="margin-top:8px"><button class="btn" data-product="${p}">Order</button></div>`;
-      grid.appendChild(card);
+    PRODUCTS.forEach(p=>{
+      const div = document.createElement('div');
+      div.className = 'product-card';
+      div.innerHTML = `<strong>${p}</strong><div class="small">Tap to order</div><div style="margin-top:10px"><button class="btn" data-product="${p}">Order</button></div>`;
+      grid.appendChild(div);
     });
-    grid.addEventListener('click', (e) => {
+    grid.addEventListener('click', e=>{
       const btn = e.target.closest('button[data-product]');
-      if (!btn) return;
-      openOrderModal();
-      // set product in modal selects (if present)
-      const productSelect = document.querySelector('#orderModal select[name="productName"]');
-      if (productSelect) productSelect.value = btn.dataset.product;
+      if(!btn) return;
+      openModal();
+      const sel = document.querySelector('#orderModal select[name="productName"]');
+      if(sel) sel.value = btn.dataset.product;
     });
   }
-  if (sel) {
-    sel.innerHTML = PRODUCTS.map(p => `<option value="${p}">${p}</option>`).join('');
-  }
+  // fill selects
+  document.querySelectorAll('select[name="productName"]').forEach(sel=>{
+    sel.innerHTML = PRODUCTS.map(p=>`<option value="${p}">${p}</option>`).join('');
+  });
 }
 
-function setupDotMenu() {
+// dot menu
+function setupDotMenu(){
   const dot = document.getElementById('menuDot');
   const menu = document.getElementById('dotMenu');
-  if (!dot || !menu) return;
-  dot.addEventListener('click', (ev) => {
-    ev.stopPropagation();
-    menu.classList.toggle('hidden');
-  });
-  // close menu when clicking outside
-  document.addEventListener('click', () => {
-    if (!menu.classList.contains('hidden')) menu.classList.add('hidden');
-  });
-
-  menu.querySelectorAll('button[data-action]').forEach(b => {
-    b.addEventListener('click', () => {
-      const sec = b.dataset.action;
-      window.location = `orders.html#section=${sec}`;
-    });
-  });
-  document.getElementById('viewDelivered')?.addEventListener('click', () => window.location='orders.html#filter=delivered');
-  document.getElementById('viewAll')?.addEventListener('click', () => window.location='orders.html');
-  document.getElementById('newOrderBtn')?.addEventListener('click', openOrderModal);
+  if(!dot||!menu) return;
+  dot.addEventListener('click', ev=>{ ev.stopPropagation(); menu.classList.toggle('hidden'); });
+  document.addEventListener('click', ()=>{ if(!menu.classList.contains('hidden')) menu.classList.add('hidden'); });
+  menu.querySelectorAll('button[data-action]').forEach(b=>b.addEventListener('click', ()=> {
+    const sec = b.dataset.action;
+    window.location = `orders.html#section=${sec}`;
+  }));
+  document.getElementById('viewDelivered')?.addEventListener('click', ()=> window.location='orders.html#filter=delivered');
+  document.getElementById('viewAll')?.addEventListener('click', ()=> window.location='orders.html');
+  document.getElementById('newOrderBtnTop')?.addEventListener('click', openModal);
 }
 
-// Modal & form
-function bindModalForm() {
+// bind modal form
+function bindModalForm(){
   const modal = document.getElementById('orderModal');
-  if (!modal) return;
+  if(!modal) return;
+  modal.querySelector('#closeModal')?.addEventListener('click', ()=>closeModal());
+  modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && isModalOpen()) closeModal(); });
+  window.addEventListener('popstate', ()=>{ if(isModalOpen()) closeModal({fromPop:true}); });
 
-  const closeBtn = modal.querySelector('#closeModal');
-  if (closeBtn) closeBtn.addEventListener('click', () => closeOrderModal());
-
-  // close when clicking backdrop (but not modal-card)
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) closeOrderModal();
-  });
-
-  // close on Escape
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && isModalOpen()) {
-      closeOrderModal();
-    }
-  });
-
-  // handle popstate to close modal when user presses browser back
-  window.addEventListener('popstate', (ev) => {
-    // if modal is open and the popped state is NOT modalOpen, then close modal
-    if (isModalOpen()) {
-      // mark fromPopState true so closeOrderModal doesn't call history.back() again
-      closeOrderModal({ fromPopState: true });
-    }
-  });
-
-  const form = modal.querySelector('#orderForm');
-  if (!form) return;
-  form.addEventListener('submit', async (ev) => {
+  const form = document.getElementById('orderForm');
+  if(!form) return;
+  form.addEventListener('submit', async ev=>{
     ev.preventDefault();
     const fd = new FormData(form);
     const body = {
@@ -160,100 +93,110 @@ function bindModalForm() {
       section: fd.get('section')
     };
     const r = await api.addOrder(body);
-    if (r.success) {
-      alert('Order saved!');
+    if(r.success){
+      alert('Order saved');
       form.reset();
-      closeOrderModal();
-      if (window.location.pathname.endsWith('orders.html')) {
-        loadOrdersFromHash();
-      }
+      closeModal();
+      if(location.pathname.endsWith('orders.html')) loadOrdersFromHash();
     } else {
-      alert('Error: ' + (r.message || 'unable to save'));
+      alert('Error: ' + (r.message||'unable to save'));
     }
   });
+  document.getElementById('cancelBtn')?.addEventListener('click', ()=> closeModal());
 }
 
-// Orders page logic
-async function renderOrders(orders) {
-  const container = document.getElementById('ordersList');
-  const title = document.getElementById('panelTitle');
-  if (!container) return;
-  container.innerHTML = '';
-  if (!orders || orders.length === 0) {
-    container.innerHTML = '<div class="small">No orders found</div>';
+// Orders dashboard functions
+async function renderOrders(orders){
+  const cont = document.getElementById('ordersList');
+  const sum = document.getElementById('summary');
+  if(!cont) return;
+  cont.innerHTML = '';
+  if(!orders || orders.length===0){
+    cont.innerHTML = `<div class="card muted">No orders</div>`;
+    if(sum) sum.textContent = '0 orders';
     return;
   }
-  orders.forEach(o => {
-    const item = document.createElement('div');
-    item.className = 'order-item';
-    item.innerHTML = `
-      <div class="order-meta">
-        <strong>${o.name} — ${o.productName}</strong>
-        <div class="small">Price: ${o.price} • Paid: ${o.paid ? 'Yes' : 'No'} • Section: ${o.section} • Status: ${o.status}</div>
-        <div class="small">Created: ${new Date(o.createdAt).toLocaleString()}</div>
+  if(sum) sum.textContent = `${orders.length} order(s)`;
+  orders.forEach(o=>{
+    const card = document.createElement('div');
+    card.className = 'order-card';
+    card.innerHTML = `
+      <div class="order-top">
+        <div>
+          <strong>${escapeHtml(o.name)} — ${escapeHtml(o.productName)}</strong>
+          <div class="meta">${new Date(o.createdAt).toLocaleString()} • Section ${o.section} • ₹${o.price} • Paid: ${o.paid ? 'Yes' : 'No'}</div>
+        </div>
+        <div class="order-actions">
+          ${o.status !== 'delivered' ? `<button class="deliver" data-id="${o.id}">Deliver</button>` : `<span class="meta">Delivered</span>`}
+          <button class="delete" data-id="${o.id}">Delete</button>
+        </div>
       </div>
-      <div class="order-actions">
-        ${o.status !== 'delivered' ? `<button class="deliverBtn" data-id="${o.id}">Mark Delivered</button>` : `<button class="ghost" disabled>Delivered</button>`}
-        <button class="deleteBtn" data-id="${o.id}">Delete</button>
-      </div>
+      ${o.status==='delivered' ? `<div class="meta">Delivered at ${new Date(o.deliveredAt||o.createdAt).toLocaleString()}</div>` : ''}
     `;
-    container.appendChild(item);
+    cont.appendChild(card);
   });
 
-  container.querySelectorAll('.deliverBtn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = btn.dataset.id;
+  // bind actions
+  cont.querySelectorAll('button.deliver').forEach(b=>{
+    b.addEventListener('click', async ()=> {
+      const id = b.dataset.id;
+      if(!confirm('Mark this order delivered?')) return;
       await api.deliver(id);
       loadOrdersFromHash();
     });
   });
-  container.querySelectorAll('.deleteBtn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      if (!confirm('Delete this order?')) return;
-      await api.deleteOrder(btn.dataset.id);
+  cont.querySelectorAll('button.delete').forEach(b=>{
+    b.addEventListener('click', async ()=> {
+      const id = b.dataset.id;
+      if(!confirm('Delete order?')) return;
+      await api.deleteOrder(id);
       loadOrdersFromHash();
     });
   });
 }
 
-async function loadOrdersFromHash() {
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
+async function loadOrdersFromHash(){
   const h = location.hash.slice(1);
   let q = '';
   let title = 'All Orders';
-  if (h.includes('section=')) {
+  if(h.includes('section=')){
     const m = h.match(/section=([A-E])/);
-    if (m) {
-      q = `section=${m[1]}`;
-      title = `Section ${m[1]} Orders`;
-    }
-  } else if (h.includes('filter=delivered')) {
-    q = `status=delivered`;
-    title = 'Delivered Orders';
-  } else {
-    q = '';
-    title = 'All Orders';
-  }
+    if(m){ q = `section=${m[1]}`; title = `Section ${m[1]} Orders`; }
+  } else if(h.includes('filter=delivered')){
+    q = `status=delivered`; title = 'Delivered Orders';
+  } else { q = ''; title = 'All Orders'; }
   document.getElementById('panelTitle')?.textContent = title;
   const res = await api.getOrders(q);
-  if (res.success) renderOrders(res.orders);
+  if(res.success) renderOrders(res.orders);
   else document.getElementById('ordersList').innerText = 'Failed to load';
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  mountProductsGrid();
+// init
+document.addEventListener('DOMContentLoaded', ()=>{
+  mountProducts();
   setupDotMenu();
   bindModalForm();
 
-  if (window.location.pathname.endsWith('orders.html')) {
-    document.getElementById('allOrdersBtn')?.addEventListener('click', () => { location.hash=''; loadOrdersFromHash(); });
-    document.getElementById('deliveredBtn')?.addEventListener('click', () => { location.hash='filter=delivered'; loadOrdersFromHash(); });
-    document.querySelectorAll('.sectionBtn')?.forEach(b => b.addEventListener('click', () => {
+  // index page bindings
+  document.getElementById('openNew')?.addEventListener('click', ()=> openModal());
+  document.getElementById('fab')?.addEventListener('click', ()=> openModal());
+  document.getElementById('newOrderBtnTop')?.addEventListener('click', ()=> openModal());
+  document.getElementById('menuDot')?.addEventListener('click', ()=>{});
+  document.getElementById('openNew')?.addEventListener('click', ()=>{});
+  document.getElementById('cancelBtn')?.addEventListener('click', ()=> closeModal());
+
+  // orders page bindings
+  if(location.pathname.endsWith('orders.html')){
+    document.getElementById('allOrdersBtn')?.addEventListener('click', ()=> { location.hash=''; loadOrdersFromHash(); });
+    document.getElementById('deliveredBtn')?.addEventListener('click', ()=> { location.hash='filter=delivered'; loadOrdersFromHash(); });
+    document.querySelectorAll('.sectionBtn').forEach(b=> b.addEventListener('click', ()=>{
       const s = b.dataset.section;
-      location.hash=`section=${s}`;
+      location.hash = `section=${s}`;
       loadOrdersFromHash();
     }));
-    document.getElementById('openNewOrder')?.addEventListener('click', openOrderModal);
-
+    document.getElementById('ordersNew')?.addEventListener('click', ()=> openModal());
     loadOrdersFromHash();
     window.addEventListener('hashchange', loadOrdersFromHash);
   }
