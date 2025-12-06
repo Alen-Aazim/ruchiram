@@ -1,97 +1,94 @@
 // server.js
-require('dotenv').config();
 const express = require('express');
-const path = require('path');
-const fs = require('fs');
-const cors = require('cors');
-const morgan = require('morgan');
 const bodyParser = require('body-parser');
-
-const PORT = process.env.PORT || 3000;
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'replace_me_with_strong_token';
-const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data', 'products.json');
+const fs = require('fs');
+const path = require('path');
+const cors = require('cors');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+const DATA_FILE = path.join(__dirname, 'orders.json');
+
 app.use(cors());
-app.use(morgan('tiny'));
-app.use(bodyParser.json({ limit: '1mb' }));
-
-// Ensure data file exists
-function ensureDataFile() {
-  const dir = path.dirname(DATA_FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, '[]', 'utf8');
-}
-ensureDataFile();
-
-function readProducts() {
-  try {
-    const raw = fs.readFileSync(DATA_FILE, 'utf8');
-    return JSON.parse(raw || '[]');
-  } catch (e) {
-    return [];
-  }
-}
-function writeProducts(products) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(products, null, 2), 'utf8');
-}
-
-// Admin auth
-function requireAdmin(req, res, next) {
-  const auth = req.headers.authorization || '';
-  if (auth.startsWith('Bearer ')) {
-    const token = auth.slice(7).trim();
-    if (token === ADMIN_TOKEN) return next();
-  }
-  return res.status(401).json({ error: 'Unauthorized' });
-}
-
-// Serve static files from public
+app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Public API: list public (non-private) products, optional ?section=...
-app.get('/api/products', (req, res) => {
-  const section = req.query.section;
-  let items = readProducts().filter(p => !p.private);
-  if (section) items = items.filter(p => (p.section || '').toUpperCase() === String(section).toUpperCase());
-  res.json({ products: items });
+// ensure data file exists
+function readData() {
+  try {
+    if (!fs.existsSync(DATA_FILE)) {
+      fs.writeFileSync(DATA_FILE, JSON.stringify({ orders: [] }, null, 2));
+    }
+    const raw = fs.readFileSync(DATA_FILE);
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error reading data:', err);
+    return { orders: [] };
+  }
+}
+function writeData(data) {
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+}
+
+// API: get all orders (with optional ?section= and ?status= filters)
+app.get('/api/orders', (req, res) => {
+  const data = readData();
+  let orders = data.orders || [];
+  const { section, status } = req.query;
+  if (section) orders = orders.filter(o => o.section === section);
+  if (status) orders = orders.filter(o => o.status === status);
+  res.json({ success: true, orders });
 });
 
-// Admin API
-app.get('/api/admin/products', requireAdmin, (req, res) => {
-  res.json({ products: readProducts() });
-});
+// API: add new order
+app.post('/api/orders', (req, res) => {
+  const data = readData();
+  const orders = data.orders || [];
+  const { name, productName, price, paid, section } = req.body;
 
-app.post('/api/admin/add', requireAdmin, (req, res) => {
-  const { product, section, price = 0, private: isPrivate } = req.body || {};
-  if (!product || !section) return res.status(400).json({ error: 'product and section required' });
-  const items = readProducts();
-  const newItem = {
-    id: 'p_' + Date.now(),
-    product: String(product),
-    section: String(section),
-    price: Number(price || 0),
-    private: !!isPrivate,
-    createdAt: Date.now()
+  if (!name || !productName || !price || !section) {
+    return res.status(400).json({ success: false, message: 'Missing required fields' });
+  }
+
+  const id = Date.now().toString();
+  const newOrder = {
+    id,
+    name,
+    productName,
+    price: Number(price),
+    paid: paid === true || paid === 'yes' || paid === 'Yes' || paid === 'YES',
+    section,
+    status: 'new',
+    createdAt: new Date().toISOString()
   };
-  items.push(newItem);
-  writeProducts(items);
-  res.json({ ok: true, product: newItem });
+  orders.push(newOrder);
+  writeData({ orders });
+  res.json({ success: true, order: newOrder });
 });
 
-app.delete('/api/admin/product/:id', requireAdmin, (req, res) => {
+// API: mark order delivered
+app.put('/api/orders/:id/deliver', (req, res) => {
   const id = req.params.id;
-  let items = readProducts();
-  items = items.filter(p => p.id !== id);
-  writeProducts(items);
-  res.json({ ok: true });
+  const data = readData();
+  const orders = data.orders || [];
+  const idx = orders.findIndex(o => o.id === id);
+  if (idx === -1) return res.status(404).json({ success: false, message: 'Order not found' });
+  orders[idx].status = 'delivered';
+  orders[idx].deliveredAt = new Date().toISOString();
+  writeData({ orders });
+  res.json({ success: true, order: orders[idx] });
 });
 
-// Fallback to index for other routes (keeps simple)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// API: delete order
+app.delete('/api/orders/:id', (req, res) => {
+  const id = req.params.id;
+  const data = readData();
+  const orders = data.orders || [];
+  const newOrders = orders.filter(o => o.id !== id);
+  writeData({ orders: newOrders });
+  res.json({ success: true });
 });
 
 app.listen(PORT, () => {
-  console.log(`Ruchiram server listening on http://localhost:${PORT} (PORT=${PORT})`);
+  console.log(`Ruchiram server running on http://localhost:${PORT}`);
 });
