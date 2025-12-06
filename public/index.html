@@ -3,50 +3,114 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ruchiram — Intro</title>
-  <link rel="stylesheet" href="/styles.css">
+  <title>Ruchiram — Food Festival (Demo)</title>
+
+  <!-- Preconnect & font (fast) -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container">
-    <div class="header">
+  <header class="site-header" id="header">
+    <div class="container header-inner">
       <div class="brand">
-        <div class="logo">R</div>
-        <div>
-          <div class="h1">Ruchiram</div>
-          <div class="small">Food Festival — Introduction</div>
+        <div class="logo" aria-hidden="true">R</div>
+        <div class="brand-text">
+          <div class="site-title">Ruchiram</div>
+          <div class="site-sub">Food Festival</div>
         </div>
       </div>
-      <div>
-        <a class="btn primary" href="/sections.html?section=BIRIYANI">View Biryani section</a>
+
+      <div class="header-right">
+        <button id="menuToggle" class="hamburger" aria-label="Open menu" aria-expanded="false">
+          <span class="hamb-line"></span><span class="hamb-line"></span><span class="hamb-line"></span>
+        </button>
       </div>
     </div>
+  </header>
 
-    <section style="margin-top:18px">
-      <h2>Welcome</h2>
-      <p class="small">This is the introduction page for Ruchiram. Use the sections page to view section-specific items and orders.</p>
+  <!-- slide menu -->
+  <nav id="sideMenu" class="side-menu" aria-hidden="true">
+    <div class="side-inner">
+      <ul class="menu-list">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="#sections">Sections</a></li>
+        <li><a href="#who">Who we are</a></li>
+        <li><a href="#contact">Contact</a></li>
+        <li><a href="/admin.html">Admin</a></li>
+      </ul>
+    </div>
+    <button id="menuClose" class="menu-close" aria-label="Close menu">✕</button>
+  </nav>
 
-      <div style="margin-top:12px">
-        <a class="link" href="/sections.html?section=BIRIYANI">Biryani</a> ·
-        <a class="link" href="/sections.html?section=SODA">Soda</a> ·
-        <a class="link" href="/sections.html?section=UPPILITTATHU">Uppilittathu</a> ·
-        <a class="link" href="/sections.html?section=POPCORN">Popcorn</a> ·
-        <a class="link" href="/sections.html?section=ICE%20CREAM">Ice Cream</a>
-      </div>
+  <main>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-bg" role="img" aria-label="festival hero image"></div>
 
-      <div class="grid" style="margin-top:18px">
-        <div class="card">
-          <h3>About</h3>
-          <p class="small">This site separates the introduction (this page) from section pages. Only public products appear on section pages. Admin-only products remain private and are only accessible via the Admin interface.</p>
-        </div>
-
-        <div class="card">
-          <h3>Owner/Admin</h3>
-          <p class="small">Go to <a class="link" href="/admin.html">Admin page</a> to log in and add private or public products. Admin actions require an ADMIN_TOKEN.</p>
+      <div class="hero-card container">
+        <h1 class="hero-title">Ruchiram</h1>
+        <p class="hero-sub">Complete Food Festival — Fast ordering, organized sections, quick delivery management.</p>
+        <div class="hero-actions">
+          <a class="btn primary" href="sections.html?section=BIRIYANI">Browse Products</a>
+          <a class="btn ghost" href="#who">Who we are</a>
         </div>
       </div>
     </section>
 
-    <div class="footer">Made for Ruchiram • Host as static + Node server</div>
-  </div>
+    <!-- sticky category bar (example; links to section pages) -->
+    <div class="catbar" id="catbar" aria-hidden="false">
+      <div class="cat-inner container">
+        <a class="cat" href="sections.html?section=BIRIYANI">Biryani</a>
+        <a class="cat" href="sections.html?section=SODA">Soda</a>
+        <a class="cat" href="sections.html?section=UPPILITTATHU">Uppilittathu</a>
+        <a class="cat" href="sections.html?section=POPCORN">Popcorn</a>
+        <a class="cat" href="sections.html?section=ICE%20CREAM">Ice Cream</a>
+      </div>
+    </div>
+
+    <!-- content -->
+    <section id="who" class="section container">
+      <h2>Who We Are</h2>
+      <p class="lead">We manage festival orders, deliver fast, and keep sections organized so staff never mix orders.</p>
+
+      <div class="two-col">
+        <div class="card">
+          <h3>What we do</h3>
+          <p>Offer fast, reliable ordering for festival stalls — separate sections per product, easy delivered tracking, and exportable records.</p>
+        </div>
+
+        <div class="card">
+          <h3>Why Ruchiram</h3>
+          <p>Simple, offline-first system that runs in the browser. Optionally add server sync for multi-device support.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="sections" class="section container">
+      <h2>Sections</h2>
+      <div class="grid">
+        <article class="tile"><h4>Biryani</h4><p>Delicious biryani — chicken & veg options.</p></article>
+        <article class="tile"><h4>Soda</h4><p>Cold drinks & sodas.</p></article>
+        <article class="tile"><h4>Uppilittathu</h4><p>Crispy fried banana & snacks.</p></article>
+        <article class="tile"><h4>Popcorn</h4><p>Butter & caramel popcorn.</p></article>
+        <article class="tile"><h4>Ice Cream</h4><p>Refreshing ice cream treats.</p></article>
+      </div>
+    </section>
+
+    <section id="contact" class="section container">
+      <h2>Contact</h2>
+      <div class="card">
+        <p class="small">For admin access or custom setup, contact the dev team.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container small">© Ruchiram • Food Festival</div>
+  </footer>
+
+  <script src="script.js" defer></script>
 </body>
 </html>
