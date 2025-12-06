@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ruchiram — Section</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="brand">
+        <div class="logo">R</div>
+        <div>
+          <div class="h1">Ruchiram — Section</div>
+          <div class="small" id="subtitle">Loading...</div>
+        </div>
+      </div>
+      <div>
+        <a class="btn" href="/">Home</a>
+      </div>
+    </div>
+
+    <div id="content" style="margin-top:18px">
+      <div id="loading">Loading products...</div>
+      <div id="grid" class="grid" style="display:none"></div>
+      <div id="no" class="small" style="display:none">No public products in this section.</div>
+    </div>
+
+    <div class="footer">Only public products are shown here.</div>
+  </div>
+
+<script>
+(async function(){
+  function qs(k){ const u = new URLSearchParams(location.search); return u.get(k); }
+  const section = qs('section') || 'ALL';
+  document.getElementById('subtitle').textContent = section;
+
+  async function fetchProducts() {
+    try {
+      const url = '/api/products' + (section && section!=='ALL' ? '?section=' + encodeURIComponent(section) : '');
+      const res = await fetch(url);
+      const j = await res.json();
+      return j.products || [];
+    } catch(e){ return []; }
+  }
+
+  function render(products) {
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    if (!products.length) {
+      document.getElementById('loading').style.display='none';
+      document.getElementById('no').style.display='';
+      grid.style.display='none';
+      return;
+    }
+    products.forEach(p=>{
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>'+escapeHtml(p.product)+'</strong><div class="small">'+(p.section||'')+'</div></div><div style="text-align:right"><div class="badge">₹'+(p.price||0)+'</div></div></div>';
+      grid.appendChild(card);
+    });
+    document.getElementById('loading').style.display='none';
+    document.getElementById('no').style.display='none';
+    grid.style.display = 'grid';
+  }
+
+  function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+  const products = await fetchProducts();
+  render(products);
+})();
+</script>
+</body>
+</html>
