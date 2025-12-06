@@ -31,6 +31,44 @@ const api = {
   }
 };
 
+function isModalOpen() {
+  const m = document.getElementById('orderModal');
+  return m && !m.classList.contains('hidden');
+}
+
+function openOrderModal() {
+  const modal = document.getElementById('orderModal');
+  if (!modal) return;
+  // prevent background scroll
+  document.body.style.overflow = 'hidden';
+  modal.classList.remove('hidden');
+
+  // push history state so that back button closes modal
+  try {
+    if (!history.state || !history.state.modalOpen) {
+      history.pushState({ modalOpen: true }, '');
+    }
+  } catch (e) {
+    // ignore
+  }
+}
+
+function closeOrderModal({ fromPopState=false } = {}) {
+  const modal = document.getElementById('orderModal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  document.body.style.overflow = '';
+
+  // if not coming from popstate, and history state was pushed, go back so browser back remains consistent
+  if (!fromPopState) {
+    try {
+      if (history.state && history.state.modalOpen) {
+        history.back();
+      }
+    } catch (e) {}
+  }
+}
+
 function mountProductsGrid() {
   const grid = document.getElementById('productGrid');
   const sel = document.getElementById('productSelect');
@@ -46,7 +84,9 @@ function mountProductsGrid() {
       const btn = e.target.closest('button[data-product]');
       if (!btn) return;
       openOrderModal();
-      document.querySelector('#orderModal select[name="productName"]').value = btn.dataset.product;
+      // set product in modal selects (if present)
+      const productSelect = document.querySelector('#orderModal select[name="productName"]');
+      if (productSelect) productSelect.value = btn.dataset.product;
     });
   }
   if (sel) {
@@ -58,11 +98,18 @@ function setupDotMenu() {
   const dot = document.getElementById('menuDot');
   const menu = document.getElementById('dotMenu');
   if (!dot || !menu) return;
-  dot.addEventListener('click', () => menu.classList.toggle('hidden'));
+  dot.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    menu.classList.toggle('hidden');
+  });
+  // close menu when clicking outside
+  document.addEventListener('click', () => {
+    if (!menu.classList.contains('hidden')) menu.classList.add('hidden');
+  });
+
   menu.querySelectorAll('button[data-action]').forEach(b => {
     b.addEventListener('click', () => {
       const sec = b.dataset.action;
-      // open orders.html filtered by section
       window.location = `orders.html#section=${sec}`;
     });
   });
@@ -72,19 +119,36 @@ function setupDotMenu() {
 }
 
 // Modal & form
-function openOrderModal() {
-  document.getElementById('orderModal').classList.remove('hidden');
-}
-function closeOrderModal() {
-  document.getElementById('orderModal').classList.add('hidden');
-}
 function bindModalForm() {
   const modal = document.getElementById('orderModal');
   if (!modal) return;
-  modal.querySelector('#closeModal').addEventListener('click', closeOrderModal);
-  modal.addEventListener('click', (e) => { if (e.target === modal) closeOrderModal(); });
+
+  const closeBtn = modal.querySelector('#closeModal');
+  if (closeBtn) closeBtn.addEventListener('click', () => closeOrderModal());
+
+  // close when clicking backdrop (but not modal-card)
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeOrderModal();
+  });
+
+  // close on Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isModalOpen()) {
+      closeOrderModal();
+    }
+  });
+
+  // handle popstate to close modal when user presses browser back
+  window.addEventListener('popstate', (ev) => {
+    // if modal is open and the popped state is NOT modalOpen, then close modal
+    if (isModalOpen()) {
+      // mark fromPopState true so closeOrderModal doesn't call history.back() again
+      closeOrderModal({ fromPopState: true });
+    }
+  });
 
   const form = modal.querySelector('#orderForm');
+  if (!form) return;
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     const fd = new FormData(form);
@@ -153,9 +217,7 @@ async function renderOrders(orders) {
 }
 
 async function loadOrdersFromHash() {
-  // parse hash like #section=A or #filter=delivered
   const h = location.hash.slice(1);
-  const params = new URLSearchParams(h.replace(/&/g,'&'));
   let q = '';
   let title = 'All Orders';
   if (h.includes('section=')) {
@@ -171,33 +233,28 @@ async function loadOrdersFromHash() {
     q = '';
     title = 'All Orders';
   }
-  document.getElementById('panelTitle').textContent = title;
+  document.getElementById('panelTitle')?.textContent = title;
   const res = await api.getOrders(q);
   if (res.success) renderOrders(res.orders);
   else document.getElementById('ordersList').innerText = 'Failed to load';
 }
 
-// small page-specific initialization
 document.addEventListener('DOMContentLoaded', () => {
   mountProductsGrid();
   setupDotMenu();
   bindModalForm();
 
-  // page-specific
   if (window.location.pathname.endsWith('orders.html')) {
-    document.getElementById('allOrdersBtn').addEventListener('click', () => { location.hash=''; loadOrdersFromHash(); });
-    document.getElementById('deliveredBtn').addEventListener('click', () => { location.hash='filter=delivered'; loadOrdersFromHash(); });
-    document.querySelectorAll('.sectionBtn').forEach(b => b.addEventListener('click', () => {
+    document.getElementById('allOrdersBtn')?.addEventListener('click', () => { location.hash=''; loadOrdersFromHash(); });
+    document.getElementById('deliveredBtn')?.addEventListener('click', () => { location.hash='filter=delivered'; loadOrdersFromHash(); });
+    document.querySelectorAll('.sectionBtn')?.forEach(b => b.addEventListener('click', () => {
       const s = b.dataset.section;
       location.hash=`section=${s}`;
       loadOrdersFromHash();
     }));
-    document.getElementById('openNewOrder').addEventListener('click', openOrderModal);
+    document.getElementById('openNewOrder')?.addEventListener('click', openOrderModal);
 
-    // initial load
     loadOrdersFromHash();
-
-    // respond to hash changes
     window.addEventListener('hashchange', loadOrdersFromHash);
   }
 });
